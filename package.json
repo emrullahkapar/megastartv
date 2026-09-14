@@ -1,0 +1,16 @@
+{
+  "name": "macweb-frontend-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Macweb arayüz (jsdom) ve gerçek Chromium/HLS regresyon testleri",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/frontend.test.mjs",
+    "test:browser": "node --test tests/player.browser.test.mjs"
+  },
+  "devDependencies": {
+    "hls.js": "1.7.2",
+    "jsdom": "^25.0.1",
+    "playwright": "1.63.0"
+  }
+}
