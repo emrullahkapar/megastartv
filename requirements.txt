@@ -1,0 +1,4 @@
+requests>=2.31
+urllib3>=2.2,<3
+beautifulsoup4>=4.12
+PyYAML>=6.0
