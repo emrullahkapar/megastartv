@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+# üretilen raporlar repoya commit edilecekse aşağıyı açmayın
+# output/
+# config/current_site.yml
+# arayüz testleri (npm install ile kurulur)
+node_modules/
+package-lock.json
+# Yerel tanılama / test çıktıları
+.cache/
+.pytest_cache/
+test-results/
+playwright-report/
