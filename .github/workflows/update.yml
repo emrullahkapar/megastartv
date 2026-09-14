@@ -1,0 +1,39 @@
+name: Update Live Matches & Stream Domain
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-streams:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
+      - name: Python Kurulumu
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Bagimliliklari kur
+        run: pip install -r requirements.txt
+
+      - name: Botu Calistir
+        run: python fixbet.py run
+
+      - name: Degisiklikleri Push Et
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "Degisiklik yok."
+          else
+            git commit -m "[BOT] guncel adres, gunun maclari ve index.html yenilendi"
+            git push
+          fi
