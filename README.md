@@ -4,6 +4,8 @@ Fixbet TV kaynağından **güncel site adresini** sürekli takip eden, **maç ID
 **günün maçlarını kategorize eden** ve **canlı / yaklaşan / günün maçı / lig & spor bazlı**
 raporlar üreten gelişmiş otomasyon botu.
 
+---
+
 ## Player ve skor güncellemesi
 
 - Atom'un güncel `/matches?id=...` player yolu ve worker → nihai HLS çözümlemesi;
@@ -26,7 +28,7 @@ raporlar üreten gelişmiş otomasyon botu.
    - fixbettv adresleri numaralı aynalardır (fixbettv84.com, fixbettv85.com, …).
    - `config/mirrors.yml` içindeki kalıp ve aralıktaki adayları HTTP sağlık kontrolünden geçirir.
    - Çalışan adresleri bulur, en güvenilir/güncel olanı seçer ve
-     `config/current_site.yml` dosyasına yazar. → **Linki her zaman güncel tutar.**
+     **`config/current_site.yml`** dosyasına yazar. → **Linki her zaman güncel tutar.**
 
 2. **Maç ID çekme** (`src/fixbet/scraper.py`, `parser.py`)
    - Sitenin maç listesinin geldiği stabil kaynaktan ham HTML çekilir
@@ -53,8 +55,8 @@ raporlar üreten gelişmiş otomasyon botu.
      (tek kaynak: şablon). Sayfada **uydurma/sabit maç yoktur**; gömülen her maç
      kaynaktan çekilen gerçek programdır.
    - **Üç sekme:** 📺 TV KANALLARI, 📅 GÜNÜN MAÇLARI ve **⚡ EXTRA PANELLER**. Eski "canlı maçlar"
-     sekmesi sabit örnek veriyle dolduğu için kaldırıldı — canlılık bilgisi artık günün maçları
-     içinde **kaynak durumu varsa ondan, yoksa program saatinden** belirleniyor.
+     sekmesi sabit örnek veriyle dolduğu için kaldırıldı — canlılık bilgisi artık
+     günün maçları içinde **kaynak durumu varsa ondan, yoksa program saatinden** belirleniyor.
    - **Yedek durum hesabı:** Gerçek durum gelmediğinde başlangıç saati + spora göre yayın penceresi
      (`settings.yml → categorize.live_window_by_sport`) → 🔴 Canlı / ⏰ Yaklaşan /
      ✅ Bitti. Aynı tablo sayfaya da gömülür, yani bot ile site aynı şeyi söyler.
@@ -112,6 +114,8 @@ raporlar üreten gelişmiş otomasyon botu.
 7. **🏆 Lig puan durumu — LİG PUANI butonu** (`src/fixbet/standings.py` + `config/standings.yml`)
    - Saatin hemen yanındaki **LİG PUANI** butonu (neon mavi/pembe kenar, solda tablo ikonu)
      ekranın ortasında karartılmış (`backdrop-filter`) bir **PUAN DURUMU** modalı açar.
+     Modalın dış kenarları neon pembe, sağ üstünde kapatma (X) butonu vardır; **Esc**,
+     X veya karartılmış alana tıklama ile kapanır.
    - Tablo sütunları: **SIRA · TAKIM · O · G · B · M · AV · P**, satır aralarında ince ayraç çizgileri.
      Kaynak notundan gelen Avrupa/düşme hattı rozetleri sıra hücresinde renklendirilir.
    - **Veri gerçek kaynaktan gelir** (ESPN `standings` ucu, `config/standings.yml → leagues`).
@@ -132,6 +136,8 @@ raporlar üreten gelişmiş otomasyon botu.
    - `matches.json`, `live_matches.json`, `today_matches.json`, `channels.json` → makine okunur veri.
    - `extra_channels.json` → EXTRA panellerin güncel m3u8 adresleri (sayfa 5 dakikada bir okur).
    - `standings.json` → lig puan durumu (sayfa 5 dakikada bir okur).
+
+---
 
 ## 🚀 Kurulum & Çalıştırma
 
@@ -159,7 +165,7 @@ python fixbet.py extras
 # Sadece lig puan durumunu çek ve sayfayı güncelle
 python fixbet.py standings
 
-# İsteğe bağlı sayfa + HLS hizmeti (TLS reverse proxy arkasında)
+# İsteğe bağlı sayfa + HLS hizmeti (üretimde HTTPS reverse proxy gerekir)
 python fixbet.py web --host 0.0.0.0 --port 8000
 
 # Ağ erişimi olan ortamda playlist/segment/header/MIME tanılaması
@@ -168,42 +174,92 @@ python fixbet.py diagnose-stream atom:bein-sports-1
 
 Çıktılar `output/` klasörüne ve güncel adres `config/current_site.yml` dosyasına yazılır.
 
+---
+
 ## ✅ Testler
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q tests
-python tests/test_pipeline.py
-python tests/test_channels.py
-python tests/test_site.py
-python tests/test_extras.py
-python tests/test_standings.py
-npm install && npm test
-python tests/test_frontend.py
+python -m pytest -q tests        # tüm Python testleri + (npm kuruluysa) jsdom sarmalayıcısı
+
+python tests/test_pipeline.py     # maç ayrıştırma + canlı/yaklaşan/bitti sınıflandırması
+python tests/test_channels.py     # 7/24 kanal listesi + marka grupları
+python tests/test_site.py         # index.html üretimi (şablon + gerçek veri)
+python tests/test_extras.py       # EXTRA paneller: m3u8 çıkarma, ayna taraması, yedek kaynaklar (ağsız)
+python tests/test_standings.py    # puan durumu ayrıştırma, uydurma satır üretilmemesi, yedek tablo (ağsız)
+
+npm install && npm test           # sayfanın kendi JS'i jsdom içinde çalıştırılır
+python tests/test_frontend.py     # aynı arayüz testlerinin pytest/sade-python sarmalayıcısı
 npx playwright install --with-deps chromium
-npm run test:browser
+npm run test:browser             # gerçek HLS medya + Chromium + mobil düzen
 ```
+
+Arayüz testleri üretilen `index.html`'in JavaScript'ini gerçekten çalıştırır: kanal
+kartlarının çizilmesi, ızgara/liste geçişi, karta tıklayınca yayının açılıp player'e
+kaydırılması, günün maçlarının gerçek veriden gelmesi, arama/filtre ve canlı tazeleme,
+EXTRA sekmesi ve HLS oynatıcı (hls.js / yerel HLS, kaynak değiştirme, hata katmanı, derin bağlantı),
+**LİG PUANI / PUAN DURUMU modalı** (açma-kapama, sütun sırası, gerçek tablonun çizilmesi,
+tabloda veri yokken uydurma satır basılmaması).
+Gerçek Chromium testleri ayrıca sentetik TS/fMP4/AES/byte-range medyayı oynatır;
+header gerektiren key/segmentlerin gerçek backend üzerinden erişildiğini doğrular.
+`workflow-tests-example.yml` dosyasını `.github/workflows/tests.yml` olarak kopyalarsanız
+bu testler her push/PR'da otomatik koşar (bu depodaki GitHub App token'ının `workflows`
+yetkisi olmadığı için dosya kökte örnek olarak duruyor).
+
+---
 
 ## 🤖 GitHub Actions ile Otomatik Güncelleme
 
-- `.github/workflows/update.yml` → periyodik olarak botu çalıştırıp üretilen raporları GitHub'a push eder.
-- `.github/workflows/cron.yml` → günlük toplu güncelleme işini çalıştırmak için kullanılabilir.
+- **`.github/workflows/update.yml`** → her 5 dakikada bir botu çalıştırır ve raporları GitHub'a kendi başına **push** eder (README üstteki rozet güncel adresi gösterir).
+- **`.github/workflows/cron.yml`** → her gün belirli saatte uzun süreli izleme + toplu güncelleme çalıştırır.
+
+> Not: Push işleminin çalışması için repoya `GITHUB_TOKEN` yetkisi yeterlidir (Actions için varsayılan).
+> Başarılı push yalnızca `settings.yml` içindeki `dry_run: true` değilken gerçekleşir.
+
+---
 
 ## 📁 Yapı
 
-```text
+```
 fixbet-bot/
-├── fixbet.py
-├── updater.py
-├── index.html
+├── fixbet.py                 # CLI giriş noktası
+├── updater.py                # eski giriş noktası -> artık boru hattını çalıştırır
+├── index.html                # ⭐ GitHub Pages sayfası (şablondan otomatik üretilir)
 ├── requirements.txt
 ├── README.md
 ├── config/
+│   ├── settings.yml          # bot/kaynak/izleme/kategori + HLS hizmeti ayarları
+│   ├── scores.yml            # ikincil skor kaynağı, lig ve açık takım adı eşlemeleri
+│   ├── standings.yml         # 🏆 lig puan durumu (PUAN DURUMU modalı) ligleri + görünen ad eşlemesi
+│   ├── mirrors.yml           # güncel adres arayan kalıplar
+│   ├── channels.yml          # bilinen kanal kimlikleri
+│   ├── extra_channels.yml    # ⚡ EXTRA PANELLER (Atom + Selçuk + Taraftarium, yeni paneller buraya)
+│   └── current_site.yml      # ⭐ BOT TARAFINDAN OTOMATİK GÜNCELLENEN GÜNCEL ADRES
 ├── src/fixbet/
-├── tests/
-└── output/
+│   ├── main.py               # orkestratör
+│   ├── domain_checker.py     # güncel site adresi takibi
+│   ├── scraper.py            # maç listesi çekme
+│   ├── parser.py             # HTML -> Match modeli
+│   ├── categorizer.py        # durum/lig/spor/gün kategorileri
+│   ├── match_state.py        # paylaşılan status sözlüğü ve skor doğrulama
+│   ├── scores.py             # kesin etkinlik eşleşmesiyle gerçek skor zenginleştirmesi
+│   ├── standings.py          # 🏆 lig puan durumu (ESPN standings -> output/standings.json)
+│   ├── stream_proxy.py       # izin listeli HLS playlist/segment/key taşıması
+│   ├── http_transport.py     # public-IP soket kontrolü; TLS/SNI doğrulaması
+│   ├── web.py                # isteğe bağlı HTTP hizmeti (TLS proxy arkasında)
+│   ├── diagnostics.py        # HLS HTTP / CORS / MIME / codec tanılaması
+│   ├── reports.py            # HTML/MD/JSON çıktılar
+│   ├── site.py               # şablondan index.html üretimi
+│   ├── channels.py           # 7/24 kanal listesi
+│   ├── extras.py             # EXTRA paneller: m3u8 çıkarma + ayna takibi
+│   ├── models.py             # Match veri modeli
+│   ├── templates/index.html  # sayfa şablonu (tek kaynak)
+│   └── config.py             # YAML yükleme/kaydetme
+├── tests/                    # bot + arayüz (jsdom) testleri
+└── output/                   # Üretilen raporlar
 ```
 
 ## ⚖️ Uyarı
 
-Bu proje yalnızca eğitim/otomasyon amaçlıdır. Telif hakkı olan içeriklerin yeniden dağıtımı yasak olabilir; kendi siteniz/datanız için kullanın.
+Bu proje yalnızca eğitim/otomasyon amaçlıdır. Telif hakkı olan içeriklerin yeniden
+dağıtımı yasak olabilir; kendi siteniz/datanız için kullanın.

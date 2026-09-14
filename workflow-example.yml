@@ -1,0 +1,45 @@
+# GitHub Actions Workflow Example
+# Bu dosyayi GitHub reponuzda .github/workflows/update.yml konumuna ekleyerek otomatik calistirabilirsiniz.
+# NOT: Depoda hazir .github/workflows/update.yml (5 dk) ve cron.yml (gunluk) dosyalari var;
+# bu dosya yalnizca ornektir.
+
+name: Update Live Matches & Stream Domain
+
+on:
+  schedule:
+    # Her 30 dakikada bir otomatik calisir
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-streams:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Checkout
+        uses: actions/checkout@v4
+
+      - name: Python Kurulumu
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Bagimliliklari kur
+        run: pip install -r requirements.txt
+
+      - name: Botu Calistir (gercek adres + gercek maclar + index.html)
+        run: python fixbet.py run
+
+      - name: Degisiklikleri Push Et
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "Degisiklik yok."
+          else
+            git commit -m "[BOT] guncel adres, gunun maclari ve index.html yenilendi"
+            git push
+          fi

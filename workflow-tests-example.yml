@@ -1,0 +1,43 @@
+name: Testler
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıkları kur
+        run: pip install -r requirements-dev.txt
+
+      - name: Bot testleri (offline, örnek veri)
+        run: python -m pytest -q tests --ignore=tests/test_frontend.py
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Arayüz bağımlılıkları
+        run: npm install
+
+      # Testler kayıtlı gerçek snapshot'ı kullanır; tarih ertesi gün olduğunda
+      # build-index'in bayat veri korumasını aşarak üretim sayfası oluşturulmaz.
+      - name: Arayüz testleri (jsdom ile sayfanın kendi JS'i)
+        run: npm test
+
+      - name: Chromium kurulumu
+        run: npx playwright install --with-deps chromium
+
+      - name: Gerçek HLS ve mobil düzen testleri
+        run: npm run test:browser

@@ -45,7 +45,6 @@ def write_streams_json() -> Path | None:
         "channels": channel_list,
         "matches": today.get("matches", []),
     }
-
     out = ROOT / "data" / "streams.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
